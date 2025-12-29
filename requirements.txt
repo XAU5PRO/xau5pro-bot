@@ -4,3 +4,4 @@ numpy
 requests
 ta
 schedule
+httpx~=0.25.2
