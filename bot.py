@@ -1,23 +1,64 @@
-import os
 import asyncio
-from telegram import Bot
+import aiohttp
+from datetime import datetime
+from telegram import Bot, ParseMode
+from telegram.ext import ApplicationBuilder, CommandHandler
 
-# Get your bot token and chat ID from environment variables
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-CHAT_ID = os.environ.get("CHAT_ID")
+# ====== CONFIG ======
+TELEGRAM_TOKEN = "8296491026:AAHVDaxvaNRAY2pBPvkQ1GgewwIA6Jc8JfM"
+CHAT_ID = 123456789  # استبدل برقم الـ chat id الخاص بك أو المجموعة
+UPDATE_INTERVAL = 300  # تحديث كل 5 دقائق
+SYMBOLS = ["XAUUSD", "EURUSD"]  # XAU/USD + Binary sample
+# ====================
 
-# Initialize the bot
-bot = Bot(token=BOT_TOKEN)
+bot = Bot(token=TELEGRAM_TOKEN)
 
-async def send_signals():
-    # Example signals, replace with your real logic
-    xau_signal = "🚀 XAU Signal: BUY"
-    otc_signal = "📈 OTC Signal: SELL"
+# ====== HELPER FUNCTIONS ======
 
-    # Send messages asynchronously
-    await bot.send_message(chat_id=CHAT_ID, text=xau_signal)
-    await bot.send_message(chat_id=CHAT_ID, text=otc_signal)
+async def fetch_market_data(session, symbol):
+    url = f"https://api.exchangerate.host/latest?base={symbol[:3]}&symbols={symbol[3:]}"
+    async with session.get(url) as response:
+        data = await response.json()
+        return float(data["rates"][symbol[3:]])
 
-# Run the async function
+def analyze_signal(price_history):
+    if len(price_history) < 2:
+        return None
+    if price_history[-1] > price_history[-2]:
+        return "BUY"
+    else:
+        return "SELL"
+
+async def send_signal(symbol, signal):
+    message = f"🚀 {symbol} Signal: *{signal}*\n🕒 {datetime.utcnow().strftime('%H:%M:%S UTC')}"
+    await bot.send_message(chat_id=CHAT_ID, text=message, parse_mode=ParseMode.MARKDOWN)
+
+# ====== MAIN LOOP ======
+
+async def main_loop():
+    price_history = {sym: [] for sym in SYMBOLS}
+
+    async with aiohttp.ClientSession() as session:
+        while True:
+            for sym in SYMBOLS:
+                price = await fetch_market_data(session, sym)
+                price_history[sym].append(price)
+                if len(price_history[sym]) > 50:
+                    price_history[sym].pop(0)
+
+                signal = analyze_signal(price_history[sym])
+                if signal:
+                    await send_signal(sym, signal)
+
+            await asyncio.sleep(UPDATE_INTERVAL)
+
+# ====== TELEGRAM COMMANDS ======
+
+async def start(update, context):
+    await update.message.reply_text("✅ XAU5Pro Bot Running!")
+
+# ====== RUN BOT ======
 if __name__ == "__main__":
-    asyncio.run(send_signals())
+    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    asyncio.run(main_loop())
