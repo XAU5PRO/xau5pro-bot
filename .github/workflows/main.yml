@@ -1,9 +1,6 @@
 name: Run Bot
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -17,7 +14,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10
+          python-version: 3.11
 
       - name: Install dependencies
         run: |
@@ -28,4 +25,10 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHAT_ID: ${{ secrets.CHAT_ID }}
-        run: python bot.py
+        run: |
+          python - <<'EOF'
+          import asyncio
+          from bot import send_signals  # assuming your bot.py has async function send_signals()
+
+          asyncio.run(send_signals())
+          EOF
