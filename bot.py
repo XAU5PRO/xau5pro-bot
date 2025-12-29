@@ -1,67 +1,76 @@
 import os
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram import Bot
+from datetime import datetime
+import random
 
 # =========================
 # CONFIG
 # =========================
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
 
-DISCLAIMER = (
-    "⚠️ Educational market analysis only.\n"
-    "Not financial advice. Trade at your own risk."
-)
+bot = Bot(token=BOT_TOKEN)
 
 # =========================
-# COMMANDS
+# XAU ANALYSIS
 # =========================
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🚀 Welcome to XAU5Pro\n\n"
-        "Professional XAUUSD market structure analysis.\n\n"
-        "Commands:\n"
-        "/analyze – Get latest XAUUSD setup\n"
-        "/status – System status\n\n"
-        f"{DISCLAIMER}"
-    )
-
-async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "✅ XAU5Pro Engine Status\n"
-        "• Bot: Online\n"
-        "• Market: XAUUSD\n"
-        "• Mode: Automated Structure Analysis"
-    )
-
-async def analyze(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # ---- Static example (will be automated later) ----
+def analyze_xau():
+    support = 1975 + random.randint(-2,2)
+    resistance = 1985 + random.randint(-2,2)
     analysis = (
-        "💹 XAU/USD – 5 Minute Timeframe\n\n"
-        "🟢 Support: 1975\n"
-        "🔴 Resistance: 1985\n\n"
-        "📌 Entry Conditions:\n"
-        "1️⃣ RSI < 30\n"
-        "2️⃣ Price near support\n"
-        "3️⃣ Rejection / reversal candle\n\n"
-        "↗️ Tip: Wait for confirmation before entry\n\n"
-        f"{DISCLAIMER}"
+        f"XAU/USD Automated Analysis\n\n"
+        f"Support: {support}\n"
+        f"Resistance: {resistance}\n"
+        f"Time: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}\n\n"
+        f"Conditions:\n"
+        f"- RSI near oversold\n"
+        f"- Price reaction at support\n"
+        f"- Session active\n"
     )
-
-    await update.message.reply_text(analysis)
+    return analysis
 
 # =========================
-# APP INIT
+# POCKET OTC SIMULATION
 # =========================
+def analyze_otc():
+    pairs = ["EUR/USD","GBP/USD","USD/JPY"]
+    pair = random.choice(pairs)
+    direction = random.choice(["BUY","SELL"])
+    analysis = (
+        f"Pocket OTC Signal\n\n"
+        f"Pair: {pair}\n"
+        f"Direction: {direction}\n"
+        f"Next Candle Entry\n"
+        f"Expiry: 1M\n"
+        f"Time: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}\n"
+    )
+    return analysis
 
+# =========================
+# AI SCORING (Rule-based)
+# =========================
+def ai_score(signal_type):
+    # Simple rule-based scoring for demonstration
+    score = 0
+    if signal_type == "XAU":
+        score += random.randint(70,100)
+    else:
+        score += random.randint(65,95)
+    return score
+
+# =========================
+# MAIN EXECUTION
+# =========================
 def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    # XAU Signal
+    xau_signal = analyze_xau()
+    if ai_score("XAU") >= 80:
+        bot.send_message(chat_id=CHAT_ID, text=xau_signal)
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("status", status))
-    app.add_handler(CommandHandler("analyze", analyze))
-
-    app.run_polling()
+    # OTC Signal
+    otc_signal = analyze_otc()
+    if ai_score("OTC") >= 80:
+        bot.send_message(chat_id=CHAT_ID, text=otc_signal)
 
 if __name__ == "__main__":
     main()
